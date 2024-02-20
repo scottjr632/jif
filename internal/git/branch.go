@@ -24,7 +24,12 @@ func CreateBranchWithCommitAndCheckout(message string) (string, error) {
 }
 
 func FormatBranchNameFromCommit(message string) string {
-	return strings.ReplaceAll(message, " ", "-")
+	san := strings.ReplaceAll(message, " ", "-")
+	san = strings.ReplaceAll(san, "[", "_")
+	san = strings.ReplaceAll(san, "]", "_")
+	san = strings.ReplaceAll(san, "{", "_")
+	san = strings.ReplaceAll(san, "}", "_")
+	return san
 }
 
 func CheckoutBranch(branch string) (string, error) {
