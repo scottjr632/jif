@@ -27,6 +27,15 @@ var submitCmd = &cobra.Command{
 	},
 }
 
+var viewCmd = &cobra.Command{
+	Use:     "view",
+	Short:   "View a pull request on GitHub",
+	Aliases: []string{"open", "o", "v"},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return gh.RunGHCmd("pr", "view", "--web")
+	},
+}
+
 func submitForParent(currentStack *engine.Stack, parentStackID engine.StackID) error {
 	parentStack, err := engine.GetStackByID(parentStackID)
 	if err != nil {
@@ -55,4 +64,5 @@ func submitForParent(currentStack *engine.Stack, parentStackID engine.StackID) e
 
 func init() {
 	prCommand.AddCommand(submitCmd)
+	prCommand.AddCommand(viewCmd)
 }
