@@ -224,3 +224,14 @@ func RestackChildren(stack *Stack) error {
 	}
 	return nil
 }
+
+func removeStackID(stackID StackID) {
+	stacks := getStacks()
+	for i, stack := range stacks {
+		if stack.ID == stackID {
+			stacks = append(stacks[:i], stacks[i+1:]...)
+			break
+		}
+	}
+	__stacks = stacks
+}
