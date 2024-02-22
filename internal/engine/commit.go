@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/fatih/color"
+	"github.com/manifoldco/promptui"
 	"github.com/scottjr632/sequoia/internal/git"
 )
 
@@ -32,16 +34,31 @@ func CommitWithNewBranch(message string, options CommitOptions) error {
 
 	if err := git.EnsureStagedFiles(); err != nil {
 		if git.IsNoStagedFilesError(err) {
-			log.Println("no staged files found")
+			color.Yellow("no staged files found")
 		}
-		if options.AutoStage {
-			log.Println("auto staging files")
-			if _, err := git.StageAll(); err != nil {
-				log.Println("failed to stage files", err)
+		prompts := promptui.Select{
+			Label: "No staged files found. Would you like to add any?",
+			Items: []string{"-a", "-p", "abort"},
+		}
+
+		_, result, err := prompts.Run()
+		if err != nil {
+			return err
+		}
+
+		switch result {
+		case "-a":
+			err := git.PromptToAddAll()
+			if err != nil {
 				return err
 			}
-		} else {
-			return err
+		case "-p":
+			err := git.PromptToPatch()
+			if err != nil {
+				return err
+			}
+		case "abort":
+			return fmt.Errorf("aborted")
 		}
 	}
 

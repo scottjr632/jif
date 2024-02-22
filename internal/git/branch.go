@@ -2,6 +2,8 @@ package git
 
 import (
 	"strings"
+
+	"github.com/scottjr632/sequoia/internal/cli"
 )
 
 func CreateBranch(branch string) (string, error) {
@@ -85,4 +87,12 @@ func GetDoesBranchExistInRemote(branch string) (bool, error) {
 func GitPushForce(branchName string) error {
 	_, err := runGit("push", "--force", "origin", branchName)
 	return err
+}
+
+func PromptToPatch() error {
+	return cli.ExecuteCommandInTerminal("git", "add", "-p")
+}
+
+func PromptToAddAll() error {
+	return cli.ExecuteCommandInTerminal("git", "add", "-A")
 }
