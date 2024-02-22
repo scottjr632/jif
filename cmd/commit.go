@@ -8,8 +8,9 @@ import (
 )
 
 var commitCmd = &cobra.Command{
-	Use:   "commit",
-	Short: "Commit the current stack",
+	Use:     "commit",
+	Short:   "Commit the current stack",
+	Aliases: []string{"c"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		msg, err := cmd.Flags().GetString("message")
 		if err != nil {
