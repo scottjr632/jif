@@ -206,6 +206,45 @@ func GetStackByID(stackID StackID) (*Stack, error) {
 	return nil, fmt.Errorf("stack not found for ID %d", stackID)
 }
 
+func RemoveBranchFromStack(branchName string) error {
+	stack, err := GetStackForBranch(branchName)
+	if err != nil {
+		return err
+	}
+
+	if stack.IsTrunk {
+		return fmt.Errorf("cannot remove trunk")
+	}
+
+	parent := stack.GetParent()
+	if parent == nil {
+		return fmt.Errorf("parent not found")
+	}
+
+	for i, childID := range parent.Children {
+		if childID == stack.ID {
+			parent.Children = append(parent.Children[:i], parent.Children[i+1:]...)
+			break
+		}
+	}
+
+	for _, childID := range stack.Children {
+		child, err := GetStackByID(childID)
+		if err != nil {
+			return err
+		}
+
+		if _, err = git.RebaseBranchOnto(child.Name, parent.Name, git.RebaseOptions{GoBackToPreviousBranch: false}); err != nil {
+			return err
+		}
+		child.Parent = parent.ID
+		parent.AddChild(child.ID)
+	}
+
+	removeStackID(stack.ID)
+	return nil
+}
+
 func RestackChildren(stack *Stack) error {
 	for _, childID := range stack.Children {
 		child, err := GetStackByID(childID)
