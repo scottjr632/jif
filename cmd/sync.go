@@ -14,8 +14,12 @@ var syncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "Sync the stack with the remote",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		trunkName, err := engine.ReadTrunkName()
+		if err != nil {
+			return err
+		}
 		color.Green("Syncing the stack with the remote")
-		mergedPRs, err := fetchAndPullTrunkWhileGettingMerged()
+		mergedPRs, err := fetchAndPullTrunkWhileGettingMerged(trunkName)
 		if err != nil {
 			return err
 		}
@@ -35,11 +39,15 @@ type MergedPRResult struct {
 	err error
 }
 
-func fetchAndPullTrunkWhileGettingMerged() ([]gh.PRState, error) {
+func fetchAndPullTrunkWhileGettingMerged(trunkName string) ([]gh.PRState, error) {
+	if _, err := git.CheckoutBranch(trunkName); err != nil {
+		return nil, err
+	}
+
 	fpChan := make(chan error)
 	mergedChan := make(chan MergedPRResult)
 	go func() {
-		fpChan <- git.FetchAndPullTrunk("main")
+		fpChan <- git.FetchAndPullTrunk(trunkName)
 	}()
 	go func() {
 		prs, err := gh.GetMergedPRs()
