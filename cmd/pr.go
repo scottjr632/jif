@@ -30,7 +30,7 @@ var submitCmd = &cobra.Command{
 var viewCmd = &cobra.Command{
 	Use:     "view",
 	Short:   "View a pull request on GitHub",
-	Aliases: []string{"open", "o", "v"},
+	Aliases: []string{"open", "o", "v", "web"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return gh.RunGHCmd("pr", "view", "--web")
 	},
