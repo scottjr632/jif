@@ -9,13 +9,13 @@ import (
 )
 
 var RootCmd = &cobra.Command{
-	Use:   "so",
-	Short: "Make stacking easy with Sequoia",
+	Use:   "jf",
+	Short: "Make stacking easy with jiffy",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		trunk, err := engine.GetTrunk()
 		if err != nil {
 			fmt.Println("failed to get trunk.", err)
-			fmt.Println("sequoia is not initialized. Run `so init` to initialize sequoia.")
+			fmt.Println("jiffy is not initialized. Run `so init` to initialize jiffy.")
 			return err
 		}
 		renderdag.RenderDag(trunk)

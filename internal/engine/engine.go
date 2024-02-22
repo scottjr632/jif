@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	enginePath = "./.so/"
+	enginePath = "./.jf/"
 )
 
 func DoesEngineExist() bool {
