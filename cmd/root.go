@@ -36,4 +36,5 @@ func init() {
 	RootCmd.AddCommand(baseSubmitCmd)
 	RootCmd.AddCommand(statusCmd)
 	RootCmd.AddCommand(prCommand)
+	RootCmd.AddCommand(trunkCmd)
 }
