@@ -1,6 +1,7 @@
 package gh
 
 import (
+	"encoding/json"
 	"log"
 	"strings"
 
@@ -32,4 +33,50 @@ func DoesPRExist(base, branch string) (bool, error) {
 	}
 	doesExist := strings.Index(out, "no pull requests match") == -1 && out != ""
 	return doesExist, nil
+}
+
+type PRState struct {
+	State  string `json:"state"`
+	Branch string `json:"headRefName"`
+	Base   string `json:"baseRefName"`
+	Title  string `json:"title"`
+}
+
+func GetMergedPRs() ([]PRState, error) {
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "merged", "--json", "number,headRefName,baseRefName,title,state")
+	if err != nil {
+		return nil, err
+	}
+	prs := []PRState{}
+	err = json.Unmarshal([]byte(out), &prs)
+	if err != nil {
+		return nil, err
+	}
+	return prs, nil
+}
+
+func GetOpenPRs() ([]PRState, error) {
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "open", "--json", "number,headRefName,baseRefName,title,state")
+	if err != nil {
+		return nil, err
+	}
+	prs := []PRState{}
+	err = json.Unmarshal([]byte(out), &prs)
+	if err != nil {
+		return nil, err
+	}
+	return prs, nil
+}
+
+func GetDraftPRs() ([]PRState, error) {
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "draft", "--json", "number,headRefName,baseRefName,title,state")
+	if err != nil {
+		return nil, err
+	}
+	prs := []PRState{}
+	err = json.Unmarshal([]byte(out), &prs)
+	if err != nil {
+		return nil, err
+	}
+	return prs, nil
 }
