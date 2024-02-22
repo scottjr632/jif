@@ -40,6 +40,24 @@ func DeleteEngine() error {
 	return os.RemoveAll(enginePath)
 }
 
+func WriteTrunkName(trunkName string) error {
+	file, err := os.Create(enginePath + "trunk")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = file.WriteString(trunkName)
+	return err
+}
+
+func ReadTrunkName() (string, error) {
+	trunkName, err := os.ReadFile(enginePath + "trunk")
+	if err != nil {
+		return "", err
+	}
+	return string(trunkName), err
+}
+
 func InitEngine(trunkName string) error {
 	if err := CreateEngine(); err != nil {
 		return err
@@ -51,6 +69,10 @@ func InitEngine(trunkName string) error {
 
 	sha, err := git.GetCurrentBranchCommitSha()
 	if err != nil {
+		return err
+	}
+
+	if err := WriteTrunkName(trunkName); err != nil {
 		return err
 	}
 
