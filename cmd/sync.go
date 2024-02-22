@@ -46,6 +46,7 @@ func fetchAndPullTrunkWhileGettingMerged(trunkName string) ([]gh.PRState, error)
 
 	fpChan := make(chan error)
 	mergedChan := make(chan MergedPRResult)
+	closedChan := make(chan MergedPRResult)
 	go func() {
 		fpChan <- git.FetchAndPullTrunk(trunkName)
 	}()
@@ -53,12 +54,18 @@ func fetchAndPullTrunkWhileGettingMerged(trunkName string) ([]gh.PRState, error)
 		prs, err := gh.GetMergedPRs()
 		mergedChan <- MergedPRResult{prs, err}
 	}()
+	go func() {
+		prs, err := gh.GetClosedPRs()
+		closedChan <- MergedPRResult{prs, err}
+	}()
 	fpErr := <-fpChan
 	mergedResult := <-mergedChan
+	closedResult := <-closedChan
 	if fpErr != nil {
 		return nil, fpErr
 	}
-	return mergedResult.prs, mergedResult.err
+	combined := append(mergedResult.prs, closedResult.prs...)
+	return combined, mergedResult.err
 }
 
 func closeMergedPRs(prs []gh.PRState) error {
