@@ -4,4 +4,7 @@ tasks:
   build:
     cmds:
       - go build -o jf -v main.go
+  fmt:
+    cmds:
+      - go fmt ./...
 
