@@ -56,9 +56,7 @@ func fetchAndPullTrunkWhileGettingMerged() ([]gh.PRState, error) {
 func closeMergedPRs(prs []gh.PRState) error {
 	for _, pr := range prs {
 		color.Green("Closing PR:", pr.Title)
-		if err := engine.RemoveBranchFromStack(pr.Branch); err != nil {
-			return err
-		}
+		engine.RemoveBranchFromStack(pr.Branch)
 	}
 	return engine.Save()
 }
