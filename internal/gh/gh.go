@@ -43,7 +43,20 @@ type PRState struct {
 }
 
 func GetMergedPRs() ([]PRState, error) {
-	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "merged", "--json", "number,headRefName,baseRefName,title,state")
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "merged", "--json", "number,headRefName,baseRefName,title,state", "--author", "@me")
+	if err != nil {
+		return nil, err
+	}
+	prs := []PRState{}
+	err = json.Unmarshal([]byte(out), &prs)
+	if err != nil {
+		return nil, err
+	}
+	return prs, nil
+}
+
+func GetClosedPRs() ([]PRState, error) {
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "closed", "--json", "number,headRefName,baseRefName,title,state", "--author", "@me")
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +69,7 @@ func GetMergedPRs() ([]PRState, error) {
 }
 
 func GetOpenPRs() ([]PRState, error) {
-	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "open", "--json", "number,headRefName,baseRefName,title,state")
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "open", "--json", "number,headRefName,baseRefName,title,state", "--author", "@me")
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +82,7 @@ func GetOpenPRs() ([]PRState, error) {
 }
 
 func GetDraftPRs() ([]PRState, error) {
-	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "draft", "--json", "number,headRefName,baseRefName,title,state")
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "draft", "--json", "number,headRefName,baseRefName,title,state", "--author", "@me")
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,5 @@
 package cmd
 
-
 import (
 	"github.com/scottjr632/sequoia/internal/cli"
 	"github.com/spf13/cobra"
