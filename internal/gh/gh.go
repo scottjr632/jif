@@ -61,6 +61,19 @@ func GetMergedPRs() ([]PRState, error) {
 	return prs, nil
 }
 
+func GetClosedPRs() ([]PRState, error) {
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "closed", "--json", "number,headRefName,baseRefName,title,state,url")
+	if err != nil {
+		return nil, err
+	}
+	prs := []PRState{}
+	err = json.Unmarshal([]byte(out), &prs)
+	if err != nil {
+		return nil, err
+	}
+	return prs, nil
+}
+
 func GetOpenPRs() ([]PRState, error) {
 	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "open", "--json", "number,headRefName,baseRefName,title,state,url")
 	if err != nil {

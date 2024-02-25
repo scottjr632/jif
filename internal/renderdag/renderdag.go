@@ -5,7 +5,6 @@ import (
 	"github.com/fatih/color"
 
 	"github.com/scottjr632/sequoia/internal/engine"
-	"github.com/scottjr632/sequoia/internal/gh"
 	"github.com/scottjr632/sequoia/internal/git"
 	"github.com/xlab/treeprint"
 )
@@ -51,20 +50,19 @@ func addChild(parent treeprint.Tree, child *engine.Stack, currentBranchName stri
 		if err != nil {
 			continue
 		}
-		addChild(branch, childStack, currentBranchName, prs)
+		addChild(branch, childStack, currentBranchName)
 	}
 }
 
 func RenderDag(trunk *engine.Stack) {
 	tree := treeprint.New()
-	openBranches, _ := gh.GetOpenPRs()
 
 	currentBranch, err := git.GetCurrentBranchName()
 	if err != nil {
 		panic(err)
 	}
 
-	addChild(tree, trunk, currentBranch, openBranches)
+	addChild(tree, trunk, currentBranch)
 
 	fmt.Println(tree.String())
 }
