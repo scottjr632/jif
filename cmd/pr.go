@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"log"
-
+	"github.com/fatih/color"
 	"github.com/scottjr632/sequoia/internal/engine"
 	"github.com/scottjr632/sequoia/internal/gh"
 	"github.com/scottjr632/sequoia/internal/git"
@@ -23,7 +22,15 @@ var submitCmd = &cobra.Command{
 			return err
 		}
 
-		return submitForParent(stack, stack.Parent)
+		if err = submitForParent(stack, stack.Parent); err != nil {
+			return err
+		}
+
+		trunk, err := engine.GetTrunk()
+		if err != nil {
+			return err
+		}
+		return engine.SyncGithubWithLocal(trunk)
 	},
 }
 
@@ -48,17 +55,19 @@ func submitForParent(currentStack *engine.Stack, parentStackID engine.StackID) e
 		}
 	}
 
+	git.CheckoutBranch(currentStack.Name)
 	if err = git.PushCurrentBranchToRemoteIfNotExists(); err != nil {
-		log.Println("Error pushing current branch to remote:", err)
+		color.Red("Error pushing current branch to remote: %s", err)
 		return err
 	}
 	if exists, err := gh.DoesPRExist(parentStack.Name, currentStack.Name); err != nil {
-		log.Println("Error checking if PR exists:", err)
+		color.Red("Error checking if PR exists: %s", err)
 		return err
 	} else if exists {
-		log.Println("exists force pushing for current stack", currentStack.Name)
+		color.Yellow("PR already exists for %s to %s, force pushing", currentStack.Name, parentStack.Name)
 		return git.GitPushForce(currentStack.Name)
 	}
+	color.Green("Creating PR for %s to %s", currentStack.Name, parentStack.Name)
 	return gh.CreatePR(parentStack.Name, currentStack.Name)
 }
 

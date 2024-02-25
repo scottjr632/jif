@@ -1,8 +1,10 @@
 package engine
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/scottjr632/sequoia/internal/gh"
 	"github.com/scottjr632/sequoia/internal/git"
 )
 
@@ -58,6 +60,27 @@ func ReadTrunkName() (string, error) {
 	return string(trunkName), err
 }
 
+func GetAllStackNames() ([]string, error) {
+	trunk, err := GetTrunk()
+	if err != nil {
+		return nil, err
+	}
+	stackNames := make([]string, 0)
+	exploreAndAppendStack(trunk, &stackNames)
+	return stackNames, nil
+}
+
+func exploreAndAppendStack(stack *Stack, stackNames *[]string) {
+	*stackNames = append(*stackNames, stack.Name)
+	for _, child := range stack.Children {
+		childStack, err := GetStackByID(child)
+		if err != nil {
+			return
+		}
+		exploreAndAppendStack(childStack, stackNames)
+	}
+}
+
 func InitEngine(trunkName string) error {
 	if err := CreateEngine(); err != nil {
 		return err
@@ -81,4 +104,53 @@ func InitEngine(trunkName string) error {
 		return err
 	}
 	return nil
+}
+
+func syncResults(trunk *Stack, prs []gh.PRState) error {
+	return updateStack(trunk, prs)
+}
+
+func updateStack(stack *Stack, prs []gh.PRState) error {
+	if !stack.IsTrunk {
+		pr := findPRStateForStack(prs, stack)
+		if pr == nil {
+			stack.PRStatus = PRStatusNone
+		} else {
+			stack.PRStatus = PRStatusType(pr.State)
+			stack.PRNumber = fmt.Sprint(pr.Number)
+			stack.PRName = pr.Title
+			stack.PRLink = pr.Link
+		}
+	}
+
+	for _, child := range stack.Children {
+		childStack, err := GetStackByID(child)
+		if err != nil {
+			return err
+		}
+		if err = updateStack(childStack, prs); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func findPRStateForStack(prs []gh.PRState, stack *Stack) *gh.PRState {
+	for _, pr := range prs {
+		if pr.Branch == stack.Name {
+			return &pr
+		}
+	}
+	return nil
+}
+
+func SyncGithubWithLocal(trunk *Stack) error {
+	prs, err := gh.GetAllPRStats()
+	if err != nil {
+		return err
+	}
+	if err = syncResults(trunk, prs); err != nil {
+		return err
+	}
+	return Save()
 }

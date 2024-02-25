@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/fatih/color"
+	"github.com/manifoldco/promptui"
 	"github.com/scottjr632/sequoia/internal/engine"
 	"github.com/scottjr632/sequoia/internal/gh"
 	"github.com/scottjr632/sequoia/internal/git"
@@ -18,15 +19,18 @@ var syncCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		color.Green("Syncing the stack with the remote")
+		color.Yellow("Syncing the stack with the remote")
 		mergedPRs, err := fetchAndPullTrunkWhileGettingMerged(trunkName)
 		if err != nil {
 			return err
 		}
-		log.Println("Merged PRs:", mergedPRs)
-		color.Green("Closing merged PRs")
+		color.Yellow("🫧 closing merged or closed PRs")
 		closeMergedPRs(mergedPRs)
-		return nil
+		trunk, err := engine.GetTrunk()
+		if err != nil {
+			return err
+		}
+		return engine.RestackChildren(trunk)
 	},
 }
 
@@ -68,10 +72,47 @@ func fetchAndPullTrunkWhileGettingMerged(trunkName string) ([]gh.PRState, error)
 	return combined, mergedResult.err
 }
 
+func doesExist(name string, names []string) bool {
+	for _, n := range names {
+		if n == name {
+			return true
+		}
+	}
+	return false
+}
+
 func closeMergedPRs(prs []gh.PRState) error {
+	stacksNames, err := engine.GetAllStackNames()
+	if err != nil {
+		return err
+	}
+
 	for _, pr := range prs {
-		color.Green("Closing PR:", pr.Title)
-		engine.RemoveBranchFromStack(pr.Branch)
+		if !doesExist(pr.Branch, stacksNames) {
+			continue
+		}
+
+		fmt.Printf("%s was merged\n", pr.Branch)
+		prompt := promptui.Select{
+			HideHelp:  true,
+			IsVimMode: true,
+			Label:     "Remove from local stack?",
+			Items:     []string{"yes", "no"},
+		}
+		_, result, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+
+		if result == "no" {
+			color.WhiteString("skipping...")
+			continue
+		}
+
+		color.Green("closing...")
+		if err = engine.RemoveBranchFromStack(pr.Branch); err != nil {
+			color.Red("error removing branch from stack: %s", err)
+		}
 	}
 	return engine.Save()
 }
