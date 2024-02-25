@@ -2,6 +2,7 @@ package renderdag
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 
 	"github.com/scottjr632/sequoia/internal/engine"
 	"github.com/scottjr632/sequoia/internal/gh"
@@ -9,23 +10,40 @@ import (
 	"github.com/xlab/treeprint"
 )
 
-func findMaybeNameInPRs(prs []gh.PRState, name string) string {
-	for _, pr := range prs {
-		if pr.Branch == name {
-			return fmt.Sprintf("%s (%s)", pr.Title, pr.State)
-		}
+func createName(stack *engine.Stack) string {
+	if stack.IsTrunk {
+		return stack.Name
 	}
-	return name
+
+	var builder string
+	if stack.PRName != "" {
+		builder = stack.PRName
+	} else {
+		builder = stack.Name
+	}
+
+	if stack.PRStatus != engine.PRStatusNone {
+		builder = fmt.Sprintf("%s (%s)", builder, stack.PRStatus)
+	}
+
+	if stack.PRNumber != "" {
+		builder = fmt.Sprintf("%s #%s", builder, stack.PRNumber)
+	}
+	if stack.PRLink != "" {
+		builder = fmt.Sprintf("%s\n  %s", builder, stack.PRLink)
+	}
+	return builder
 }
 
-func addChild(parent treeprint.Tree, child *engine.Stack, currentBranchName string, prs []gh.PRState) {
+func addChild(parent treeprint.Tree, child *engine.Stack, currentBranchName string) {
 	isCurrentBranch := child.Name == currentBranchName
 	var branchName string
-	nameToUse := findMaybeNameInPRs(prs, child.Name)
+	currentName := createName(child)
 	if isCurrentBranch {
-		branchName = fmt.Sprintf("(current) %s", nameToUse)
+		currentString := color.GreenString("(current)")
+		branchName = fmt.Sprintf("%s %s", currentString, currentName)
 	} else {
-		branchName = nameToUse
+		branchName = currentName
 	}
 	branch := parent.AddBranch(branchName)
 	for _, c := range child.Children {

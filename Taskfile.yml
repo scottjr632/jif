@@ -3,5 +3,8 @@ version: '3'
 tasks:
   build:
     cmds:
-      - go build -o jf -v main.go
+      - go build -o bin/jf -v main.go
+  link:
+    cmds:
+      - ln -s "$(pwd)/bin/jf" ~/.local/bin
 

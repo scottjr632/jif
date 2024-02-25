@@ -17,7 +17,6 @@ func RunAuthLogin() error {
 }
 
 func CreatePR(base, branch string) error {
-	log.Println("Creating PR for", branch, "to", base)
 	return RunGHCmd("pr", "create", "--base", base, "--head", branch)
 }
 
@@ -40,23 +39,17 @@ type PRState struct {
 	Branch string `json:"headRefName"`
 	Base   string `json:"baseRefName"`
 	Title  string `json:"title"`
+	Number int    `json:"number"`
+	Link   string `json:"url"`
+}
+
+type PRResult struct {
+	PRs []PRState
+	Err error
 }
 
 func GetMergedPRs() ([]PRState, error) {
-	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "merged", "--json", "number,headRefName,baseRefName,title,state", "--author", "@me")
-	if err != nil {
-		return nil, err
-	}
-	prs := []PRState{}
-	err = json.Unmarshal([]byte(out), &prs)
-	if err != nil {
-		return nil, err
-	}
-	return prs, nil
-}
-
-func GetClosedPRs() ([]PRState, error) {
-	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "closed", "--json", "number,headRefName,baseRefName,title,state", "--author", "@me")
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "merged", "--json", "number,headRefName,baseRefName,title,state,url")
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +62,7 @@ func GetClosedPRs() ([]PRState, error) {
 }
 
 func GetOpenPRs() ([]PRState, error) {
-	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "open", "--json", "number,headRefName,baseRefName,title,state", "--author", "@me")
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "open", "--json", "number,headRefName,baseRefName,title,state,url")
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +75,7 @@ func GetOpenPRs() ([]PRState, error) {
 }
 
 func GetDraftPRs() ([]PRState, error) {
-	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "draft", "--json", "number,headRefName,baseRefName,title,state", "--author", "@me")
+	out, err := cli.ExecuteCmd("gh", "pr", "list", "--state", "draft", "--json", "number,headRefName,baseRefName,title,state,url")
 	if err != nil {
 		return nil, err
 	}
@@ -92,4 +85,44 @@ func GetDraftPRs() ([]PRState, error) {
 		return nil, err
 	}
 	return prs, nil
+}
+
+func GetAllPRStats() ([]PRState, error) {
+	mergedChan := make(chan PRResult)
+	openChan := make(chan PRResult)
+	draftChan := make(chan PRResult)
+
+	go func() {
+		prs, err := GetMergedPRs()
+		mergedChan <- PRResult{PRs: prs, Err: err}
+	}()
+
+	go func() {
+		prs, err := GetOpenPRs()
+		openChan <- PRResult{PRs: prs, Err: err}
+	}()
+
+	go func() {
+		prs, err := GetDraftPRs()
+		draftChan <- PRResult{PRs: prs, Err: err}
+	}()
+
+	mergedResult := <-mergedChan
+	// if mergedResult.Err != nil {
+	// 	return nil, mergedResult.Err
+	// }
+
+	openResult := <-openChan
+	// if openResult.Err != nil {
+	// 	return nil, openResult.Err
+	// }
+
+	draftResult := <-draftChan
+	// if draftResult.Err != nil {
+	// 	return nil, draftResult.Err
+	// }
+
+	allPRs := append(mergedResult.PRs, openResult.PRs...)
+	allPRs = append(allPRs, draftResult.PRs...)
+	return allPRs, nil
 }

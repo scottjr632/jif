@@ -21,6 +21,16 @@ var stacksOnce sync.Once
 type StackID = uint64
 type VersionID = uint64
 
+type PRStatusType = string
+
+const (
+	PRStatusNone   PRStatusType = "none"
+	PRStatusOpen   PRStatusType = "open"
+	PRStatusClosed PRStatusType = "closed"
+	PRStatusMerged PRStatusType = "merged"
+	PRStatusDraft  PRStatusType = "draft"
+)
+
 var engineFullPath = enginePath + stackBinaryName + "_" + version
 
 type Stack struct {
@@ -30,6 +40,10 @@ type Stack struct {
 	IsTrunk  bool
 	Sha      string
 	Parent   StackID
+	PRStatus PRStatusType
+	PRNumber string
+	PRLink   string
+	PRName   string
 	Children []StackID
 	Versions []VersionID
 }
@@ -72,6 +86,7 @@ func newStack(id StackID, name string, isDirty bool, isTrunk bool, sha string, p
 		IsTrunk:  isTrunk,
 		Sha:      sha,
 		Parent:   parentID,
+		PRStatus: PRStatusNone,
 		Children: make([]StackID, 0),
 		Versions: make([]VersionID, 0),
 	}

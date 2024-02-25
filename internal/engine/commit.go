@@ -38,7 +38,7 @@ func CommitWithNewBranch(message string, options CommitOptions) error {
 		}
 		prompts := promptui.Select{
 			Label: "No staged files found. Would you like to add any?",
-			Items: []string{"-a", "-p", "abort"},
+			Items: []string{"submit all changes (--all)", "(some changes) --patch", "Abort changes"},
 		}
 
 		_, result, err := prompts.Run()
@@ -47,17 +47,17 @@ func CommitWithNewBranch(message string, options CommitOptions) error {
 		}
 
 		switch result {
-		case "-a":
+		case "submit all changes (--all)":
 			err := git.PromptToAddAll()
 			if err != nil {
 				return err
 			}
-		case "-p":
+		case "(some changes) --patch":
 			err := git.PromptToPatch()
 			if err != nil {
 				return err
 			}
-		case "abort":
+		case "Abort changes":
 			return fmt.Errorf("aborted")
 		}
 	}
