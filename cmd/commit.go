@@ -18,7 +18,7 @@ var commitCmd = &cobra.Command{
 			log.Println(err)
 			return err
 		}
-		
+
 		if msg == "" {
 			prompt := promptui.Prompt{
 				Label: "Commit message",
