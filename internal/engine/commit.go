@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
@@ -17,8 +18,47 @@ func (e ErrNoStack) Error() string {
 	return "no stack found for branch " + e.BranchName
 }
 
+const (
+	CommitTypeAll   = "submit all changes (--all)"
+	CommitTypePatch = "some changes (--patch)"
+	CommitTypeAbort = "Abort changes"
+)
+
 type CommitOptions struct {
 	AutoStage bool
+}
+
+func promptIfUnstagedFiles() error {
+	if err := git.EnsureStagedFiles(); err != nil {
+		if git.IsNoStagedFilesError(err) {
+			color.Yellow("no staged files found")
+		}
+		prompts := promptui.Select{
+			Label: "No staged files found. Would you like to add any?",
+			Items: []string{CommitTypeAll, CommitTypePatch, CommitTypeAbort},
+		}
+
+		_, result, err := prompts.Run()
+		if err != nil {
+			return err
+		}
+
+		switch result {
+		case CommitTypeAll:
+			err := git.PromptToAddAll()
+			if err != nil {
+				return err
+			}
+		case CommitTypePatch:
+			err := git.PromptToPatch()
+			if err != nil {
+				return err
+			}
+		case CommitTypeAbort:
+			return fmt.Errorf("aborted")
+		}
+	}
+	return nil
 }
 
 func CommitWithNewBranch(message string, options CommitOptions) error {
@@ -32,47 +72,21 @@ func CommitWithNewBranch(message string, options CommitOptions) error {
 		return ErrNoStack{BranchName: currentBranch}
 	}
 
-	if err := git.EnsureStagedFiles(); err != nil {
-		if git.IsNoStagedFilesError(err) {
-			color.Yellow("no staged files found")
-		}
-		prompts := promptui.Select{
-			Label: "No staged files found. Would you like to add any?",
-			Items: []string{"submit all changes (--all)", "(some changes) --patch", "Abort changes"},
-		}
-
-		_, result, err := prompts.Run()
-		if err != nil {
-			return err
-		}
-
-		switch result {
-		case "submit all changes (--all)":
-			err := git.PromptToAddAll()
-			if err != nil {
-				return err
-			}
-		case "(some changes) --patch":
-			err := git.PromptToPatch()
-			if err != nil {
-				return err
-			}
-		case "Abort changes":
-			return fmt.Errorf("aborted")
-		}
+	if err = promptIfUnstagedFiles(); err != nil {
+		return err
 	}
 
 	// create a new stack for the new branch
-	branchName := git.FormatBranchNameFromCommit(message)
-	_, err = git.CreateAndCheckoutBranch(branchName)
+	t := time.Now().Format("2006-01-02")
+	branchName := t + "-" + git.FormatBranchNameFromCommit(message)
+	err = git.CreateAndCheckoutBranch(branchName)
 	if err != nil {
 		log.Println("failed to checkout branch", branchName, err)
 		return err
 	}
 
-	out, err := git.Commit(message)
+	err = git.Commit(message)
 	if err != nil {
-		log.Println("failed to commit", message, err, string(out))
 		return err
 	}
 
@@ -86,7 +100,7 @@ func CommitWithNewBranch(message string, options CommitOptions) error {
 	stack.AddChild(newStack.ID)
 	err = Save()
 	if err != nil {
-		log.Println("failed to save stack", err)
+		color.Red("Failed to save stack. Please try again.", err)
 		return err
 	}
 	return nil
@@ -102,22 +116,11 @@ func AmendCommit(options CommitOptions) error {
 		return fmt.Errorf("cannot amend trunk")
 	}
 
-	if err := git.EnsureStagedFiles(); err != nil {
-		if git.IsNoStagedFilesError(err) {
-			log.Println("no staged files found")
-		}
-		if options.AutoStage {
-			log.Println("auto staging files")
-			if _, err := git.StageAll(); err != nil {
-				log.Println("failed to stage files", err)
-				return err
-			}
-		} else {
-			return err
-		}
+	if err = promptIfUnstagedFiles(); err != nil {
+		return err
 	}
 
-	_, err = git.AmendCommit()
+	err = git.AmendCommit()
 	if err != nil {
 		return err
 	}

@@ -13,11 +13,11 @@ func IsNoStagedFilesError(err error) bool {
 	return ok
 }
 
-func Commit(message string) (string, error) {
+func Commit(message string) error {
 	if err := EnsureStagedFiles(); err != nil {
-		return "", err
+		return err
 	}
-	return runGit("commit", "-m", message)
+	return cli.ExecuteCommandInTerminal("git", "commit", "-m", message)
 }
 
 func CommitAsync(message string) <-chan cli.CmdResult {
@@ -36,6 +36,6 @@ func EnsureStagedFiles() error {
 	return NoStagedFilesError{}
 }
 
-func AmendCommit() (string, error) {
-	return runGit("commit", "--amend", "--no-edit")
+func AmendCommit() error {
+	return cli.ExecuteCommandInTerminal("git", "commit", "--amend", "--no-edit")
 }

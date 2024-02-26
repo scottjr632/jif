@@ -6,21 +6,21 @@ import (
 	"github.com/scottjr632/sequoia/internal/cli"
 )
 
-func CreateBranch(branch string) (string, error) {
-	return runGit("branch", branch)
+func CreateBranch(branch string) error {
+	return cli.ExecuteCommandInTerminal("git", "branch", branch)
 }
 
-func CreateAndCheckoutBranch(branch string) (string, error) {
-	out, err := CreateBranch(branch)
+func CreateAndCheckoutBranch(branch string) error {
+	err := CreateBranch(branch)
 	if err != nil {
-		return out, err
+		return err
 	}
-	return runGit("checkout", branch)
+	return cli.ExecuteCommandInTerminal("git", "checkout", branch)
 }
 
 // CreateBranchWithCommit creates a new branch and commits a message to it
 // the branch name is a function of the commit message
-func CreateBranchWithCommitAndCheckout(message string) (string, error) {
+func CreateBranchWithCommitAndCheckout(message string) error {
 	branchName := FormatBranchNameFromCommit(message)
 	return CreateAndCheckoutBranch(branchName)
 }

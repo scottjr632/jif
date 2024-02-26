@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/scottjr632/sequoia/internal/git"
@@ -29,6 +30,8 @@ const (
 	PRStatusClosed PRStatusType = "closed"
 	PRStatusMerged PRStatusType = "merged"
 	PRStatusDraft  PRStatusType = "draft"
+
+	PRStackCommentIdentifier = "[//]: # (BEGIN JIFFY FOOTER)"
 )
 
 var engineFullPath = enginePath + stackBinaryName + "_" + version
@@ -288,4 +291,84 @@ func removeStackID(stackID StackID) {
 		}
 	}
 	__stacks = stacks
+}
+
+func GetStackForCommentByStackID(stackID StackID) (string, error) {
+	stack, err := GetStackByID(stackID)
+	if err != nil {
+		return "", err
+	}
+	return GetStackForCommentByStack(stack), nil
+}
+
+func GetStackForCommentByStack(stack *Stack) string {
+	// we want to get all the parents up to the trunk and all the children that have been submited to GH
+
+	stackNames := make([]string, 0)
+	appendStackNameForParent(stack.GetParent(), &stackNames)
+	stackWithLink := fmt.Sprintf("#%s", stack.PRNumber)
+	stackNames = append(stackNames, "👉  "+stackWithLink)
+	appendStackNameForChildren(stack, &stackNames)
+
+	builder := "\r\n---\r\n"
+	builder += PRStackCommentIdentifier + "\r\n" + "Stacked pull requests:\r\n"
+
+	for _, name := range stackNames {
+		builder += "* " + name + "\r\n"
+	}
+	return builder
+}
+
+func appendStackNameForParent(stack *Stack, stackNames *[]string) {
+	if stack == nil || stack.IsTrunk || stack.PRNumber == "" {
+		return
+	}
+	appendStackNameForParent(stack.GetParent(), stackNames)
+	nameWithLink := fmt.Sprintf("#%s", stack.PRNumber)
+	*stackNames = append(*stackNames, nameWithLink)
+}
+
+func appendStackNameForChildren(stack *Stack, stackNames *[]string) {
+	if stack == nil || stack.PRNumber == "" {
+		return
+	}
+	for i, childID := range stack.Children {
+		child, err := GetStackByID(childID)
+		if err != nil {
+			continue
+		}
+		namekWithLink := fmt.Sprintf("#%s", child.PRNumber)
+		*stackNames = append(*stackNames, strings.Repeat("   ", i)+namekWithLink)
+		appendStackNameForChildren(child, stackNames)
+	}
+}
+
+func GetStacksInStack(stack *Stack) []*Stack {
+	stacks := make([]*Stack, 0)
+	appendStackForParent(stack.GetParent(), &stacks)
+	stacks = append(stacks, stack)
+	appendStackForChildren(stack, &stacks)
+	return stacks
+}
+
+func appendStackForParent(stack *Stack, stacks *[]*Stack) {
+	if stack == nil || stack.IsTrunk {
+		return
+	}
+	appendStackForParent(stack.GetParent(), stacks)
+	*stacks = append(*stacks, stack)
+}
+
+func appendStackForChildren(stack *Stack, stacks *[]*Stack) {
+	if stack == nil {
+		return
+	}
+	for _, childID := range stack.Children {
+		child, err := GetStackByID(childID)
+		if err != nil {
+			continue
+		}
+		*stacks = append(*stacks, child)
+		appendStackForChildren(child, stacks)
+	}
 }
