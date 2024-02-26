@@ -139,3 +139,25 @@ func GetAllPRStats() ([]PRState, error) {
 	allPRs = append(allPRs, draftResult.PRs...)
 	return allPRs, nil
 }
+
+type PRBody struct {
+	Body string `json:"body"`
+}
+
+func GetBodyForPR(prNumber string) (string, error) {
+	out, err := cli.ExecuteCmd("gh", "pr", "view", prNumber, "--json", "body")
+	if err != nil {
+		return "", err
+	}
+	var prBody PRBody
+	err = json.Unmarshal([]byte(out), &prBody)
+	if err != nil {
+		return "", err
+	}
+	return prBody.Body, nil
+}
+
+func UpdateBodyForPR(prNumber string, body string) error {
+	_, err := cli.ExecuteCmd("gh", "pr", "edit", prNumber, "--body", body)
+	return err
+}

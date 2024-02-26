@@ -19,17 +19,29 @@ var syncCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		color.Yellow("Syncing the stack with the remote")
-		mergedPRs, err := fetchAndPullTrunkWhileGettingMerged(trunkName)
-		if err != nil {
-			return err
-		}
-		color.Yellow("🫧 closing merged or closed PRs")
-		closeMergedPRs(mergedPRs)
 		trunk, err := engine.GetTrunk()
 		if err != nil {
 			return err
 		}
+
+		color.Yellow("Syncing the stack with the remote")
+
+		errChan := make(chan error)
+		go func() {
+			errChan <- engine.SyncGithubWithLocal(trunk)
+		}()
+
+		mergedPRs, err := fetchAndPullTrunkWhileGettingMerged(trunkName)
+		if err != nil {
+			return err
+		}
+
+		// block for the sync from remote to finish, however, its not critical if it fails
+		<-errChan
+
+		color.Yellow("🫧 closing merged or closed PRs")
+		closeMergedPRs(mergedPRs)
+
 		return engine.RestackChildren(trunk)
 	},
 }

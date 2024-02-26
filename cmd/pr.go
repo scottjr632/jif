@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"strings"
+	"sync"
+
 	"github.com/fatih/color"
 	"github.com/scottjr632/sequoia/internal/engine"
 	"github.com/scottjr632/sequoia/internal/gh"
@@ -26,12 +29,61 @@ var submitCmd = &cobra.Command{
 			return err
 		}
 
+		if err = submitForChildren(stack, stack.GetParent()); err != nil {
+			return err
+		}
+
 		trunk, err := engine.GetTrunk()
 		if err != nil {
 			return err
 		}
-		return engine.SyncGithubWithLocal(trunk)
+		if err = engine.SyncGithubWithLocal(trunk); err != nil {
+			return err
+		}
+		addCommentsForStack(stack)
+		return nil
 	},
+}
+
+func addCommentsForStack(stack *engine.Stack) error {
+	stacks := engine.GetStacksInStack(stack)
+	wg := sync.WaitGroup{}
+	for _, stack := range stacks {
+		if stack.IsTrunk || stack.PRNumber == "" {
+			continue
+		}
+
+		wg.Add(1)
+		go func(stack *engine.Stack) {
+			defer wg.Done()
+			if err := getAndUpdateBodyForPR(stack); err != nil {
+				color.Red("Error updating body for PR: %s", err)
+			}
+		}(stack)
+	}
+	wg.Wait()
+	return nil
+}
+
+func getAndUpdateBodyForPR(stack *engine.Stack) error {
+	// get the current body
+	body, err := gh.GetBodyForPR(stack.PRNumber)
+	if err != nil {
+		return err
+	}
+
+	// check if there is a comment already and remove it if there is
+	index := strings.Index(body, engine.PRStackCommentIdentifier)
+	if index != -1 {
+		body = body[:index]
+	}
+
+	comment := engine.GetStackForCommentByStack(stack)
+	body += "\r\n" + comment
+	if err = gh.UpdateBodyForPR(stack.PRNumber, body); err != nil {
+		return err
+	}
+	return nil
 }
 
 var viewCmd = &cobra.Command{
@@ -69,6 +121,39 @@ func submitForParent(currentStack *engine.Stack, parentStackID engine.StackID) e
 	}
 	color.Green("Creating PR for %s to %s", currentStack.Name, parentStack.Name)
 	return gh.CreatePR(parentStack.Name, currentStack.Name)
+}
+
+func submitForChildren(currentStack *engine.Stack, parentStack *engine.Stack) error {
+	git.CheckoutBranch(currentStack.Name)
+	exists, err := gh.DoesPRExist(parentStack.Name, currentStack.Name)
+	if err != nil {
+		color.Red("Error checking if PR exists: %s", err)
+		return err
+	}
+
+	if !exists {
+		return nil
+	}
+
+	color.Yellow("PR already exists for %s to %s, force pushing", currentStack.Name, parentStack.Name)
+	if err = git.GitPushForce(currentStack.Name); err != nil {
+		color.Red("Error force pushing: %s", err)
+	}
+
+	for _, child := range currentStack.Children {
+		child, err := engine.GetStackByID(child)
+		if err != nil {
+			color.Red("Error getting child stack: %s", err)
+			continue
+		}
+
+		_, err = git.RebaseBranchOnto(child.Name, currentStack.Name, git.RebaseOptions{GoBackToPreviousBranch: true})
+		if err != nil {
+			return err
+		}
+		submitForChildren(child, currentStack)
+	}
+	return nil
 }
 
 func init() {
