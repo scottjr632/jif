@@ -3,10 +3,12 @@ package engine
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
+	"github.com/scottjr632/sequoia/internal/config"
 	"github.com/scottjr632/sequoia/internal/git"
 )
 
@@ -76,9 +78,19 @@ func CommitWithNewBranch(message string, options CommitOptions) error {
 		return err
 	}
 
+	c, err := config.LoadPersistenConfig()
+	if err != nil {
+		return err
+	}
+
+	if c.BranchPrefix != "" && !strings.HasSuffix(c.BranchPrefix, "/") {
+		c.BranchPrefix = c.BranchPrefix + "/"
+	}
+
 	// create a new stack for the new branch
-	t := time.Now().Format("2006-01-02")
-	branchName := t + "-" + git.FormatBranchNameFromCommit(message)
+	t := time.Now().Format("01-02")
+	branchName := c.BranchPrefix + t + "-" + git.FormatBranchNameFromCommit(message)
+
 	err = git.CreateAndCheckoutBranch(branchName)
 	if err != nil {
 		log.Println("failed to checkout branch", branchName, err)
