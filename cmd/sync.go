@@ -81,7 +81,21 @@ func fetchAndPullTrunkWhileGettingMerged(trunkName string) ([]gh.PRState, error)
 		return nil, fpErr
 	}
 	combined := append(mergedResult.prs, closedResult.prs...)
-	return combined, mergedResult.err
+	// merged and closed PRs can overlap, so we need to dedupe them
+	return dedupePRs(combined), mergedResult.err
+}
+
+func dedupePRs(prs []gh.PRState) []gh.PRState {
+	seen := make(map[string]struct{})
+	result := make([]gh.PRState, 0)
+	for _, pr := range prs {
+		if _, ok := seen[pr.Branch]; ok {
+			continue
+		}
+		seen[pr.Branch] = struct{}{}
+		result = append(result, pr)
+	}
+	return result
 }
 
 func doesExist(name string, names []string) bool {
