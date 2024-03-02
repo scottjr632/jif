@@ -96,3 +96,11 @@ func PromptToPatch() error {
 func PromptToAddAll() error {
 	return cli.ExecuteCommandInTerminal("git", "add", "-A")
 }
+
+func DeleteBranch(branchName string) error {
+	return cli.ExecuteCommandInTerminal("git", "branch", "-d", branchName)
+}
+
+func DeleteBranchForce(branchName string) error {
+	return cli.ExecuteCommandInTerminal("git", "branch", "-D", branchName)
+}
