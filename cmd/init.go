@@ -9,7 +9,7 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize sequoia for the current repo at .",
+	Short: "Initialize jiffy for the current repo at .",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		branchNames, err := git.GetAllBranchNames()
 		if err != nil {
