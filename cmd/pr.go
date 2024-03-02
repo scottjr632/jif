@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"strings"
 	"sync"
 
 	"github.com/fatih/color"
@@ -72,15 +71,11 @@ func getAndUpdateBodyForPR(stack *engine.Stack) error {
 		return err
 	}
 
-	// check if there is a comment already and remove it if there is
-	index := strings.Index(body, engine.PRStackCommentIdentifier)
-	if index != -1 {
-		body = body[:index]
-	}
+	bodyWithoutComment := engine.GetStringWithoutStackComment(body)
 
 	comment := engine.GetStackForCommentByStack(stack)
-	body += "\r\n" + comment
-	if err = gh.UpdateBodyForPR(stack.PRNumber, body); err != nil {
+	bodyWithoutComment += "\r\n" + comment
+	if err = gh.UpdateBodyForPR(stack.PRNumber, bodyWithoutComment); err != nil {
 		return err
 	}
 	return nil
