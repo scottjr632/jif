@@ -310,13 +310,23 @@ func GetStackForCommentByStack(stack *Stack) string {
 	stackNames = append(stackNames, "👉  "+stackWithLink)
 	appendStackNameForChildren(stack, &stackNames)
 
-	builder := "\r\n---\r\n"
-	builder += PRStackCommentIdentifier + "\r\n" + "Stacked pull requests:\r\n"
+	builder := PRStackCommentIdentifier + "\r\n"
+	builder += "\r\n---\r\n"
+	builder += "\r\n" + "Stacked dependencies on/for current PR:\r\n"
 
 	for _, name := range stackNames {
 		builder += "* " + name + "\r\n"
 	}
 	return builder
+}
+
+func GetStringWithoutStackComment(text string) string {
+	index := strings.Index(text, PRStackCommentIdentifier)
+	if index == -1 {
+		return text
+	}
+	return text[:index]
+
 }
 
 func appendStackNameForParent(stack *Stack, stackNames *[]string) {
