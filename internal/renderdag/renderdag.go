@@ -9,7 +9,18 @@ import (
 	"github.com/xlab/treeprint"
 )
 
-func createName(stack *engine.Stack) string {
+func createNameShort(stack *engine.Stack) string {
+	if stack.IsTrunk {
+		return stack.Name
+	}
+
+	if stack.PRName != "" {
+		return stack.PRName
+	}
+	return stack.Name
+}
+
+func createNameLong(stack *engine.Stack) string {
 	if stack.IsTrunk {
 		return stack.Name
 	}
@@ -34,10 +45,10 @@ func createName(stack *engine.Stack) string {
 	return builder
 }
 
-func addChild(parent treeprint.Tree, child *engine.Stack, currentBranchName string) {
+func addChild(parent treeprint.Tree, child *engine.Stack, currentBranchName string, createNameFn func(stack *engine.Stack) string) {
 	isCurrentBranch := child.Name == currentBranchName
 	var branchName string
-	currentName := createName(child)
+	currentName := createNameFn(child)
 	if isCurrentBranch {
 		currentString := color.GreenString("(current)")
 		branchName = fmt.Sprintf("%s %s", currentString, currentName)
@@ -50,7 +61,7 @@ func addChild(parent treeprint.Tree, child *engine.Stack, currentBranchName stri
 		if err != nil {
 			continue
 		}
-		addChild(branch, childStack, currentBranchName)
+		addChild(branch, childStack, currentBranchName, createNameFn)
 	}
 }
 
@@ -62,7 +73,20 @@ func RenderDag(trunk *engine.Stack) {
 		panic(err)
 	}
 
-	addChild(tree, trunk, currentBranch)
+	addChild(tree, trunk, currentBranch, createNameLong)
+
+	fmt.Println(tree.String())
+}
+
+func RenderDagShort(trunk *engine.Stack) {
+	tree := treeprint.New()
+
+	currentBranch, err := git.GetCurrentBranchName()
+	if err != nil {
+		panic(err)
+	}
+
+	addChild(tree, trunk, currentBranch, createNameShort)
 
 	fmt.Println(tree.String())
 }

@@ -15,8 +15,9 @@ type GHResult struct {
 }
 
 var logCmd = &cobra.Command{
-	Use:   "log",
-	Short: "Log stack",
+	Use:     "log",
+	Short:   "Log stack",
+	Aliases: []string{"l"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		trunk, err := engine.GetTrunk()
 		if err != nil {
@@ -33,6 +34,21 @@ var logCmd = &cobra.Command{
 			return err
 		}
 
+		return engine.Save()
+	},
+}
+
+var logShortCmd = &cobra.Command{
+	Use:     "log-short",
+	Short:   "Log stack",
+	Aliases: []string{"ls"},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		trunk, err := engine.GetTrunk()
+		if err != nil {
+			return err
+		}
+
+		renderdag.RenderDagShort(trunk)
 		return engine.Save()
 	},
 }
