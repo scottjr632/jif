@@ -24,7 +24,7 @@ var syncCmd = &cobra.Command{
 			return err
 		}
 
-		color.Yellow("Syncing the stack with the remote")
+		color.Yellow("Syncing the stack with the remote...")
 
 		errChan := make(chan error)
 		go func() {
@@ -39,7 +39,7 @@ var syncCmd = &cobra.Command{
 		// block for the sync from remote to finish, however, its not critical if it fails
 		<-errChan
 
-		color.Yellow("🫧 closing merged or closed PRs")
+		fmt.Println("Checking merged or closed PRs...")
 		closeMergedPRs(mergedPRs)
 
 		return engine.RestackChildren(trunk)
@@ -99,16 +99,19 @@ func closeMergedPRs(prs []gh.PRState) error {
 		return err
 	}
 
+	fmt.Printf("\r\n\r\n")
+
 	for _, pr := range prs {
 		if !doesExist(pr.Branch, stacksNames) {
 			continue
 		}
 
-		fmt.Printf("%s was merged\n", pr.Branch)
+		cyan := color.New(color.FgCyan).SprintFunc()
+		label := fmt.Sprintf("%s was merged, remove it locally?", cyan(pr.Branch))
 		prompt := promptui.Select{
 			HideHelp:  true,
 			IsVimMode: true,
-			Label:     "Remove from local stack?",
+			Label:     label,
 			Items:     []string{"yes", "no"},
 		}
 		_, result, err := prompt.Run()
@@ -122,8 +125,14 @@ func closeMergedPRs(prs []gh.PRState) error {
 		}
 
 		color.Green("closing...")
-		if err = engine.RemoveBranchFromStack(pr.Branch); err != nil {
+		err = engine.RemoveBranchFromStack(pr.Branch)
+		if err != nil {
 			color.Red("error removing branch from stack: %s", err)
+		}
+		if err == nil {
+			if err = git.DeleteBranchForce(pr.Branch); err != nil {
+				color.Red("error deleting branch: %s", err)
+			}
 		}
 	}
 	return engine.Save()
