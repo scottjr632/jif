@@ -1,6 +1,10 @@
 package git
 
-import "github.com/scottjr632/sequoia/internal/cli"
+import (
+	"strings"
+
+	"github.com/scottjr632/sequoia/internal/cli"
+)
 
 type NoStagedFilesError struct{}
 
@@ -25,7 +29,11 @@ func CommitAsync(message string) <-chan cli.CmdResult {
 }
 
 func GetCurrentBranchCommitSha() (string, error) {
-	return runGit("rev-parse", "HEAD")
+	sha, err := runGit("rev-parse", "HEAD")
+	if err != nil {
+		return "", err
+	}
+	return strings.ReplaceAll(sha, "\n", ""), nil
 }
 
 // EnsureStagedFiles returns NoStagedFilesError if there are no staged files
