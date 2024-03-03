@@ -260,7 +260,7 @@ func RemoveBranchFromStack(branchName string) error {
 	}
 
 	removeStackID(stack.ID)
-	return nil
+	return Save()
 }
 
 func RestackChildren(stack *Stack) error {
