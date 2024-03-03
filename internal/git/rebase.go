@@ -11,15 +11,13 @@ func NewRebaseOptions() RebaseOptions {
 }
 
 func RebaseBranchOnto(branchName, onto string, options RebaseOptions) (string, error) {
-	if options.GoBackToPreviousBranch {
-		previousBranch, err := GetCurrentBranchName()
-		if err != nil {
-			return "", err
-		}
-		defer CheckoutBranch(previousBranch)
+	previousBranch, err := GetCurrentBranchName()
+	if err != nil {
+		return "", err
 	}
+	defer CheckoutBranch(previousBranch)
 
-	_, err := CheckoutBranch(branchName)
+	_, err = CheckoutBranch(branchName)
 	if err != nil {
 		return "", err
 	}
