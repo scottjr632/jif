@@ -7,8 +7,9 @@ import (
 )
 
 var revsCmd = &cobra.Command{
-	Use:   "revs",
-	Short: "List all revisions in the current branch",
+	Use:     "revs",
+	Short:   "List all revisions in the current branch",
+	Aliases: []string{"revisions", "rev"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		stack, err := engine.GetStackForCurrentBranch()
 		if err != nil {
