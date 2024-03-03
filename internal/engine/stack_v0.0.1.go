@@ -37,24 +37,18 @@ const (
 var engineFullPath = enginePath + stackBinaryName + "_" + version
 
 type Stack struct {
-	ID       StackID
-	Name     string
-	IsDirty  bool
-	IsTrunk  bool
-	Sha      string
-	Parent   StackID
-	PRStatus PRStatusType
-	PRNumber string
-	PRLink   string
-	PRName   string
-	Children []StackID
-	Versions []VersionID
-}
-
-type Version struct {
-	ID      VersionID
-	Version int
-	Sha     string
+	ID        StackID
+	Name      string
+	IsDirty   bool
+	IsTrunk   bool
+	Sha       string
+	Parent    StackID
+	PRStatus  PRStatusType
+	PRNumber  string
+	PRLink    string
+	PRName    string
+	Children  []StackID
+	Revisions []string
 }
 
 type Stacks = []*Stack
@@ -83,15 +77,15 @@ func getNextID() StackID {
 
 func newStack(id StackID, name string, isDirty bool, isTrunk bool, sha string, parentID StackID) *Stack {
 	newStack := &Stack{
-		ID:       id,
-		Name:     name,
-		IsDirty:  isDirty,
-		IsTrunk:  isTrunk,
-		Sha:      sha,
-		Parent:   parentID,
-		PRStatus: PRStatusNone,
-		Children: make([]StackID, 0),
-		Versions: make([]VersionID, 0),
+		ID:        id,
+		Name:      name,
+		IsDirty:   isDirty,
+		IsTrunk:   isTrunk,
+		Sha:       sha,
+		Parent:    parentID,
+		PRStatus:  PRStatusNone,
+		Children:  make([]StackID, 0),
+		Revisions: make([]string, 0),
 	}
 	__stacks = append(__stacks, newStack)
 	return newStack
@@ -112,8 +106,17 @@ func (s *Stack) AddChild(childStackID StackID) {
 	s.Children = append(s.Children, childStackID)
 }
 
-func (s *Stack) AddVersion(versionID VersionID) {
-	s.Versions = append(s.Versions, versionID)
+func (s *Stack) AddRevision(sha string) {
+	s.Revisions = append(s.Revisions, sha)
+}
+
+func (s *Stack) PopRevision() string {
+	if len(s.Revisions) == 0 {
+		return ""
+	}
+	sha := s.Revisions[len(s.Revisions)-1]
+	s.Revisions = s.Revisions[:len(s.Revisions)-1]
+	return sha
 }
 
 func (s *Stack) GetParent() *Stack {
@@ -273,13 +276,14 @@ func RestackChildren(stack *Stack) error {
 			continue
 		}
 
-		_, err = git.RebaseBranchOnto(child.Name, stack.Name, git.RebaseOptions{GoBackToPreviousBranch: false})
+		_, err = git.RebaseBranchOnto(child.Name, stack.Name, git.RebaseOptions{GoBackToPreviousBranch: true})
 		if err != nil {
 			return err
 		}
 		RestackChildren(child)
 	}
-	return nil
+	_, err := git.CheckoutBranch(stack.Name)
+	return err
 }
 
 func removeStackID(stackID StackID) {

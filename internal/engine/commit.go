@@ -132,6 +132,11 @@ func AmendCommit(options CommitOptions) error {
 		return err
 	}
 
+	currentSha, err := git.GetCurrentBranchCommitSha()
+	if err != nil {
+		return err
+	}
+	stack.AddRevision(currentSha)
 	err = git.AmendCommit()
 	if err != nil {
 		return err
@@ -141,5 +146,8 @@ func AmendCommit(options CommitOptions) error {
 	if err != nil {
 		return err
 	}
-	return RestackChildren(stack)
+	if err = RestackChildren(stack); err != nil {
+		return err
+	}
+	return Save()
 }
