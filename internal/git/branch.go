@@ -31,6 +31,9 @@ func FormatBranchNameFromCommit(message string) string {
 	san = strings.ReplaceAll(san, "]", "_")
 	san = strings.ReplaceAll(san, "{", "_")
 	san = strings.ReplaceAll(san, "}", "_")
+	san = strings.ReplaceAll(san, "(", "_")
+	san = strings.ReplaceAll(san, ")", "_")
+	san = strings.ReplaceAll(san, ":", "-")
 	return san
 }
 
