@@ -40,7 +40,3 @@ var unamendCmd = &cobra.Command{
 		return engine.Save()
 	},
 }
-
-func init() {
-	RootCmd.AddCommand(unamendCmd)
-}

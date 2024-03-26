@@ -29,8 +29,6 @@ func init() {
 	RootCmd.AddCommand(ghCmd)
 	RootCmd.AddCommand(gitCmd)
 	RootCmd.AddCommand(commitCmd)
-	RootCmd.AddCommand(prevCmd)
-	RootCmd.AddCommand(nextCmd)
 	RootCmd.AddCommand(logCmd)
 	RootCmd.AddCommand(logShortCmd)
 	RootCmd.AddCommand(amendCmd)

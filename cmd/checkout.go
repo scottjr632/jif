@@ -119,5 +119,7 @@ var checkoutCmd = &cobra.Command{
 }
 
 func init() {
+	RootCmd.AddCommand(prevCmd)
+	RootCmd.AddCommand(nextCmd)
 	RootCmd.AddCommand(checkoutCmd)
 }

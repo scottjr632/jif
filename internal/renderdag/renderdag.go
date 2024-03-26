@@ -36,6 +36,10 @@ func createNameLong(stack *engine.Stack) string {
 		builder = fmt.Sprintf("%s (%s)", builder, stack.PRStatus)
 	}
 
+	if stack.NeedsRestack {
+		builder = fmt.Sprintf("%s (needs restack)", builder)
+	}
+
 	if stack.PRNumber != "" {
 		builder = fmt.Sprintf("%s #%s", builder, stack.PRNumber)
 	}

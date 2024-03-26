@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/scottjr632/sequoia/internal/cli"
 	"github.com/scottjr632/sequoia/internal/git"
 )
 
@@ -37,18 +38,19 @@ const (
 var engineFullPath = enginePath + stackBinaryName + "_" + version
 
 type Stack struct {
-	ID        StackID
-	Name      string
-	IsDirty   bool
-	IsTrunk   bool
-	Sha       string
-	Parent    StackID
-	PRStatus  PRStatusType
-	PRNumber  string
-	PRLink    string
-	PRName    string
-	Children  []StackID
-	Revisions []string
+	ID           StackID
+	Name         string
+	IsDirty      bool
+	IsTrunk      bool
+	NeedsRestack bool
+	Sha          string
+	Parent       StackID
+	PRStatus     PRStatusType
+	PRNumber     string
+	PRLink       string
+	PRName       string
+	Children     []StackID
+	Revisions    []string
 }
 
 type Stacks = []*Stack
@@ -266,6 +268,25 @@ func RemoveBranchFromStack(branchName string) error {
 	return Save()
 }
 
+func RestackOnParent(stack *Stack) error {
+	if stack.IsTrunk {
+		return nil
+	}
+
+	parent := stack.GetParent()
+	if parent == nil {
+		return fmt.Errorf("parent not found")
+	}
+
+	_, err := git.RebaseBranchOnto(stack.Name, parent.Name, git.RebaseOptions{GoBackToPreviousBranch: true})
+	if err != nil {
+		cli.ExecuteCommandInTerminal("git", "rebase", "--abort")
+		return err
+	}
+	parent.NeedsRestack = false
+	return Save()
+}
+
 func RestackChildren(stack *Stack) error {
 	for _, childID := range stack.Children {
 		child, err := GetStackByID(childID)
@@ -276,14 +297,19 @@ func RestackChildren(stack *Stack) error {
 			continue
 		}
 
+		child.NeedsRestack = true
 		_, err = git.RebaseBranchOnto(child.Name, stack.Name, git.RebaseOptions{GoBackToPreviousBranch: true})
 		if err != nil {
 			return err
 		}
+		child.NeedsRestack = false
 		RestackChildren(child)
 	}
 	_, err := git.CheckoutBranch(stack.Name)
-	return err
+	if err != nil {
+		return err
+	}
+	return Save()
 }
 
 func removeStackID(stackID StackID) {
