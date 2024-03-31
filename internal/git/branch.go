@@ -88,7 +88,7 @@ func GetDoesBranchExistInRemote(branch string) (bool, error) {
 }
 
 func GitPushForce(branchName string) error {
-	_, err := runGit("push", "--force", "origin", branchName)
+	_, err := runGit("push", "--force-with-lease", "origin", branchName)
 	return err
 }
 
