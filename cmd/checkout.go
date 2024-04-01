@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"github.com/fatih/color"
+	"strings"
+
 	"github.com/manifoldco/promptui"
 	"github.com/scottjr632/sequoia/internal/engine"
 	"github.com/scottjr632/sequoia/internal/git"
@@ -69,4 +71,53 @@ var nextCmd = &cobra.Command{
 		_, err = git.CheckoutBranch(result)
 		return err
 	},
+}
+
+var checkoutCmd = &cobra.Command{
+	Use:     "checkout",
+	Aliases: []string{"co"},
+	Short:   "Checkout a branch",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		branchesWithNames, err := engine.GetAllBranchNames()
+		if err != nil {
+			return err
+		}
+
+		items := make([]string, len(branchesWithNames))
+		for i, branch := range branchesWithNames {
+			if branch.PRname != "" {
+				items[i] = branch.PRname
+			} else {
+				items[i] = branch.Name
+			}
+		}
+
+		prompt := promptui.Select{
+			Label:             "Select next branch",
+			Items:             items,
+			StartInSearchMode: true,
+			Searcher: func(input string, index int) bool {
+				return strings.Contains(items[index], input)
+			},
+		}
+		_, result, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+
+		branchNameToCheckout := result
+		for _, branch := range branchesWithNames {
+			if branch.PRname == result {
+				branchNameToCheckout = branch.Name
+				break
+			}
+		}
+
+		_, err = git.CheckoutBranch(branchNameToCheckout)
+		return err
+	},
+}
+
+func init() {
+	RootCmd.AddCommand(checkoutCmd)
 }
