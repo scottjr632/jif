@@ -15,6 +15,6 @@ var baseSubmitCmd = &cobra.Command{
 			return err
 		}
 
-		return submitForParent(stack, stack.Parent)
+		return submitForParents(stack)
 	},
 }
