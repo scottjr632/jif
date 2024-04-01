@@ -1,15 +1,18 @@
 package git
 
-import "github.com/scottjr632/sequoia/internal/cli"
+import (
+	"github.com/fatih/color"
+	"github.com/scottjr632/sequoia/internal/cli"
+)
 
 func FetchAndPullTrunk(trunkName string) error {
-	// Fetch
-	if err := cli.ExecuteCommandInTerminal("git", "fetch", "origin", trunkName); err != nil {
+	color.White("Fast forwarding trunk...")
+	if err := cli.ExecuteCmdToStdout("git", "fetch", "origin", trunkName); err != nil {
 		return err
 	}
-	// Pull
-	if err := cli.ExecuteCommandInTerminal("git", "pull", "origin", trunkName); err != nil {
+	if err := cli.ExecuteCmdToStdout("git", "pull", "origin", trunkName); err != nil {
 		return err
 	}
+	color.Green("Trunk updated!")
 	return nil
 }
