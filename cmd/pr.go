@@ -115,7 +115,7 @@ func createPRForStack(currentStack *engine.Stack) error {
 	}
 
 	git.CheckoutBranch(currentStack.Name)
-	if err := git.PushCurrentBranchToRemoteIfNotExists(); err != nil {
+	if err := git.PushCurrentBranchToRemoteIfNotExistsAndNeedsUpdate(); err != nil {
 		color.Red("Error pushing current branch to remote: %s", err)
 		return err
 	}
@@ -148,7 +148,7 @@ func submitForParents(currentStack *engine.Stack) error {
 	}
 
 	git.CheckoutBranch(currentStack.Name)
-	if err = git.PushCurrentBranchToRemoteIfNotExists(); err != nil {
+	if err = git.PushCurrentBranchToRemoteIfNotExistsAndNeedsUpdate(); err != nil {
 		color.Red("Error pushing current branch to remote: %s", err)
 		return err
 	}
@@ -170,7 +170,7 @@ func submitForSelfAndChildrenIfPRExists(currentStack *engine.Stack) error {
 	}
 
 	git.CheckoutBranch(currentStack.Name)
-	if err = git.PushCurrentBranchToRemoteIfNotExists(); err != nil {
+	if err = git.PushCurrentBranchToRemoteIfNotExistsAndNeedsUpdate(); err != nil {
 		color.Red("Error pushing current branch to remote: %s", err)
 		return err
 	}

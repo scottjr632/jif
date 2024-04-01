@@ -3,6 +3,7 @@ package git
 import (
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/scottjr632/sequoia/internal/cli"
 )
 
@@ -63,12 +64,20 @@ func GetCurrentBranchName() (string, error) {
 	return strings.ReplaceAll(strings.TrimSpace(out), "\n", ""), nil
 }
 
-func PushCurrentBranchToRemoteIfNotExists() error {
+func GetLatestLocalCommitSha(branch string) (string, error) {
+	out, err := runGit("rev-parse", branch)
+	if err != nil {
+		return "", err
+	}
+	return strings.ReplaceAll(strings.TrimSpace(out), "\n", ""), nil
+}
+
+func PushCurrentBranchToRemoteIfNotExistsAndNeedsUpdate() error {
 	branch, err := GetCurrentBranchName()
 	if err != nil {
 		return err
 	}
-	exists, err := GetDoesBranchExistInRemote(branch)
+	exists, err := GetDoesBranchExistInRemoteAndShouldUpdate(branch)
 	if err != nil {
 		return err
 	}
@@ -85,6 +94,45 @@ func GetDoesBranchExistInRemote(branch string) (bool, error) {
 		return false, err
 	}
 	return out != "", nil
+}
+
+func GetDoesBranchExistInRemoteAndShouldUpdate(branch string) (bool, error) {
+	exists, err := GetDoesBranchExistInRemote(branch)
+	if err != nil {
+		return false, err
+	}
+
+	if !exists {
+		color.White("Branch %s does not exist in remote", branch)
+		return false, nil
+	}
+
+	out, err := runGit("ls-remote", "origin", branch)
+	if err != nil {
+		return false, err
+	}
+
+	parts := strings.Split(out, "\t")
+	if len(parts) != 2 {
+		color.Red("Error parsing ls-remote output: %s", out)
+		return false, err
+	}
+
+	remoteCommit := strings.ReplaceAll(strings.TrimSpace(parts[0]), "\n", "") // parts[0]
+	localCommit, err := GetLatestLocalCommitSha(branch)
+	if err != nil {
+		color.Red("Error getting latest local commit sha: %s", err)
+		return false, err
+	}
+
+	shouldUpdate := remoteCommit != localCommit
+	if shouldUpdate {
+		color.Yellow("Branch %s exists in remote and needs update", branch)
+	} else {
+		color.White("Branch %s exists in remote and does not need update", branch)
+	}
+
+	return shouldUpdate, nil
 }
 
 func GitPushForce(branchName string) error {
