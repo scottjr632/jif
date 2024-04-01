@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
 	"github.com/scottjr632/sequoia/internal/engine"
 	"github.com/scottjr632/sequoia/internal/git"
@@ -36,7 +35,7 @@ var nextCmd = &cobra.Command{
 			return err
 		}
 		if len(stack.Children) == 0 {
-			fmt.Println("No descendants found")
+			color.Yellow("No descendants found")
 			return nil
 		}
 
