@@ -129,7 +129,7 @@ func GetDoesBranchExistInRemoteAndShouldUpdate(branch string) (bool, error) {
 	if shouldUpdate {
 		color.Yellow("Branch %s exists in remote and needs update", branch)
 	} else {
-		color.White("Branch %s exists in remote and does not need update", branch)
+		color.Yellow("Branch %s exists in remote and does not need update", branch)
 	}
 
 	return shouldUpdate, nil
