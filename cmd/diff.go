@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/fatih/color"
 	"github.com/scottjr632/sequoia/internal/cli"
 	"github.com/scottjr632/sequoia/internal/engine"
 	"github.com/spf13/cobra"
@@ -15,11 +14,12 @@ var diffCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if stack.IsTrunk {
-			color.Yellow("You are on the trunk branch, there is no parent to compare to")
+		parentStack := stack.GetParent()
+		if parentStack == nil {
+			cli.ExecuteCommandInTerminal("git", "diff")
 			return nil
 		}
-		parentStack := stack.GetParent()
+
 		return cli.ExecuteCommandInTerminal("git", "diff", parentStack.Name)
 	},
 }
