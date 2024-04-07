@@ -320,21 +320,26 @@ func GetStackForCommentByStackID(stackID StackID) (string, error) {
 	return GetStackForCommentByStack(stack), nil
 }
 
+type stackNameWithLevel struct {
+	name  string
+	level int
+}
+
 func GetStackForCommentByStack(stack *Stack) string {
 	// we want to get all the parents up to the trunk and all the children that have been submited to GH
 
-	stackNames := make([]string, 0)
+	stackNames := make([]stackNameWithLevel, 0)
 	appendStackNameForParent(stack.GetParent(), &stackNames)
 	stackWithLink := fmt.Sprintf("#%s", stack.PRNumber)
-	stackNames = append(stackNames, "👉  "+stackWithLink)
-	appendStackNameForChildren(stack, &stackNames)
+	stackNames = append(stackNames, stackNameWithLevel{name: "👉  " + stackWithLink, level: 0})
+	appendStackNameForChildren(stack, &stackNames, 0)
 
 	builder := PRStackCommentIdentifier + "\r\n"
 	builder += "\r\n---\r\n"
 	builder += "\r\n" + "Stacked dependencies on/for current PR:\r\n"
 
 	for _, name := range stackNames {
-		builder += "* " + name + "\r\n"
+		builder += strings.Repeat("  ", name.level) + "* " + name.name + "\r\n"
 	}
 	return builder
 }
@@ -348,16 +353,16 @@ func GetStringWithoutStackComment(text string) string {
 
 }
 
-func appendStackNameForParent(stack *Stack, stackNames *[]string) {
+func appendStackNameForParent(stack *Stack, stackNames *[]stackNameWithLevel) {
 	if stack == nil || stack.IsTrunk || stack.PRNumber == "" {
 		return
 	}
 	appendStackNameForParent(stack.GetParent(), stackNames)
 	nameWithLink := fmt.Sprintf("#%s", stack.PRNumber)
-	*stackNames = append(*stackNames, nameWithLink)
+	*stackNames = append(*stackNames, stackNameWithLevel{name: nameWithLink, level: 0})
 }
 
-func appendStackNameForChildren(stack *Stack, stackNames *[]string) {
+func appendStackNameForChildren(stack *Stack, stackNames *[]stackNameWithLevel, currentLevel int) {
 	if stack == nil || stack.PRNumber == "" {
 		return
 	}
@@ -366,9 +371,9 @@ func appendStackNameForChildren(stack *Stack, stackNames *[]string) {
 		if err != nil {
 			continue
 		}
-		namekWithLink := fmt.Sprintf("#%s", child.PRNumber)
-		*stackNames = append(*stackNames, strings.Repeat("   ", i)+namekWithLink)
-		appendStackNameForChildren(child, stackNames)
+		nameWithLink := fmt.Sprintf("#%s", child.PRNumber)
+		*stackNames = append(*stackNames, stackNameWithLevel{name: nameWithLink, level: currentLevel + i})
+		appendStackNameForChildren(child, stackNames, currentLevel+1)
 	}
 }
 
