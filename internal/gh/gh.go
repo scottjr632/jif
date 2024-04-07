@@ -16,8 +16,10 @@ func RunAuthLogin() error {
 	return RunGHCmd("auth", "login")
 }
 
-func CreatePR(base, branch string) error {
-	return RunGHCmd("pr", "create", "--base", base, "--head", branch)
+func CreatePR(base, branch string, args ...string) error {
+	cmds := []string{"pr", "create", "--base", base, "--head", branch}
+	cmds = append(cmds, args...)
+	return RunGHCmd(cmds...)
 }
 
 func CommentPR(prNumber, comment string) error {
