@@ -37,18 +37,19 @@ const (
 var engineFullPath = enginePath + stackBinaryName + "_" + version
 
 type Stack struct {
-	ID        StackID
-	Name      string
-	IsDirty   bool
-	IsTrunk   bool
-	Sha       string
-	Parent    StackID
-	PRStatus  PRStatusType
-	PRNumber  string
-	PRLink    string
-	PRName    string
-	Children  []StackID
-	Revisions []string
+	ID           StackID
+	Name         string
+	IsDirty      bool
+	IsTrunk      bool
+	NeedsRestack bool
+	Sha          string
+	Parent       StackID
+	PRStatus     PRStatusType
+	PRNumber     string
+	PRLink       string
+	PRName       string
+	Children     []StackID
+	Revisions    []string
 }
 
 type Stacks = []*Stack
@@ -77,15 +78,16 @@ func getNextID() StackID {
 
 func newStack(id StackID, name string, isDirty bool, isTrunk bool, sha string, parentID StackID) *Stack {
 	newStack := &Stack{
-		ID:        id,
-		Name:      name,
-		IsDirty:   isDirty,
-		IsTrunk:   isTrunk,
-		Sha:       sha,
-		Parent:    parentID,
-		PRStatus:  PRStatusNone,
-		Children:  make([]StackID, 0),
-		Revisions: make([]string, 0),
+		ID:           id,
+		Name:         name,
+		IsDirty:      isDirty,
+		NeedsRestack: false,
+		IsTrunk:      isTrunk,
+		Sha:          sha,
+		Parent:       parentID,
+		PRStatus:     PRStatusNone,
+		Children:     make([]StackID, 0),
+		Revisions:    make([]string, 0),
 	}
 	__stacks = append(__stacks, newStack)
 	return newStack
@@ -266,9 +268,22 @@ func RemoveBranchFromStack(branchName string) error {
 	return Save()
 }
 
-func RestackChildren(stack *Stack) error {
+func SetAllChildrenNeedRestackForTrunk(stack *Stack) {
+	stack.NeedsRestack = true
 	for _, childID := range stack.Children {
 		child, err := GetStackByID(childID)
+		if err != nil {
+			continue
+		}
+		SetAllChildrenNeedRestackForTrunk(child)
+	}
+}
+
+func RestackChildren(stack *Stack) error {
+	SetAllChildrenNeedRestackForTrunk(stack)
+	for _, childID := range stack.Children {
+		child, err := GetStackByID(childID)
+		child.NeedsRestack = true
 		if err != nil {
 			return err
 		}
@@ -280,10 +295,10 @@ func RestackChildren(stack *Stack) error {
 		if err != nil {
 			return err
 		}
+		child.NeedsRestack = false
 		RestackChildren(child)
 	}
-	_, err := git.CheckoutBranch(stack.Name)
-	return err
+	return nil
 }
 
 func removeStackID(stackID StackID) {
