@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/fatih/color"
@@ -23,6 +24,11 @@ var submitCmd = &cobra.Command{
 		currentBranchStack, err := engine.GetStackForCurrentBranch()
 		if err != nil {
 			return err
+		}
+
+		if currentBranchStack.NeedsRestack {
+			color.Red("Cannot submit a PR for a stack that needs to be restacked")
+			return errors.New("Cannot submit a PR for a stack that needs to be restacked")
 		}
 
 		parentStack, err := engine.GetStackByID(currentBranchStack.Parent)
