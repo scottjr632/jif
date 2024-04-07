@@ -29,11 +29,12 @@ var submitCmd = &cobra.Command{
 			return err
 		}
 
-		if err = submitForParents(parentStack); err != nil {
+		additionalArgs := getCreatePrAdditionalArgs(cmd)
+		if err = submitForParents(parentStack, additionalArgs...); err != nil {
 			return err
 		}
 		// submit for self
-		if err = createPRForStack(currentBranchStack); err != nil {
+		if err = createPRForStack(currentBranchStack, additionalArgs...); err != nil {
 			return err
 		}
 
@@ -107,7 +108,28 @@ var viewCmd = &cobra.Command{
 	},
 }
 
-func createPRForStack(currentStack *engine.Stack) error {
+func getCreatePrAdditionalArgs(cmd *cobra.Command) []string {
+	additionalArgs := make([]string, 0)
+	isDraft, _ := cmd.Flags().GetBool("draft")
+	if isDraft {
+		additionalArgs = append(additionalArgs, "--draft")
+	}
+	isNoEdit, _ := cmd.Flags().GetBool("no-edit")
+	if isNoEdit {
+		additionalArgs = append(additionalArgs, "--fill")
+	}
+	isWebEdit, _ := cmd.Flags().GetBool("web")
+	if isWebEdit {
+		additionalArgs = append(additionalArgs, "--web")
+	}
+	isDryRun, _ := cmd.Flags().GetBool("dry-run")
+	if isDryRun {
+		additionalArgs = append(additionalArgs, "--dry-run")
+	}
+	return additionalArgs
+}
+
+func createPRForStack(currentStack *engine.Stack, additionalArgs ...string) error {
 	parentStackID := currentStack.Parent
 	parentStack, err := engine.GetStackByID(parentStackID)
 	if err != nil {
@@ -127,10 +149,11 @@ func createPRForStack(currentStack *engine.Stack) error {
 		return git.GitPushForce(currentStack.Name)
 	}
 	color.Green("Creating PR for %s to %s", currentStack.Name, parentStack.Name)
-	return gh.CreatePR(parentStack.Name, currentStack.Name)
+
+	return gh.CreatePR(parentStack.Name, currentStack.Name, additionalArgs...)
 }
 
-func submitForParents(currentStack *engine.Stack) error {
+func submitForParents(currentStack *engine.Stack, additionalArgs ...string) error {
 	if currentStack.IsTrunk || currentStack.Parent == 0 {
 		return nil
 	}
@@ -142,7 +165,7 @@ func submitForParents(currentStack *engine.Stack) error {
 	}
 
 	if parentStack.Parent != 0 && !parentStack.IsTrunk {
-		if err = submitForParents(parentStack); err != nil {
+		if err = submitForParents(parentStack, additionalArgs...); err != nil {
 			return err
 		}
 	}
@@ -160,7 +183,7 @@ func submitForParents(currentStack *engine.Stack) error {
 		return git.GitPushForce(currentStack.Name)
 	}
 	color.Green("Creating PR for %s to %s", currentStack.Name, parentStack.Name)
-	return gh.CreatePR(parentStack.Name, currentStack.Name)
+	return gh.CreatePR(parentStack.Name, currentStack.Name, additionalArgs...)
 }
 
 func submitForSelfAndChildrenIfPRExists(currentStack *engine.Stack) error {
@@ -195,6 +218,11 @@ func submitForSelfAndChildrenIfPRExists(currentStack *engine.Stack) error {
 }
 
 func init() {
+	submitCmd.Flags().BoolP("draft", "d", false, "Whether to create the PR as a draft or not")
+	submitCmd.Flags().BoolP("no-edit", "n", false, "Whether you want to create the PR without prompting for an edit")
+	submitCmd.Flags().BoolP("web", "w", false, "Create the PR in the browser")
+	submitCmd.Flags().BoolP("dry-run", "", false, "Whether to run the command in dry-run mode")
+
 	prCommand.AddCommand(submitCmd)
 	prCommand.AddCommand(viewCmd)
 }
