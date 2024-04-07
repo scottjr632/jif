@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/scottjr632/sequoia/internal/cli"
+	"github.com/scottjr632/sequoia/internal/git"
 )
 
 func RunGHCmd(args ...string) error {
@@ -161,5 +162,11 @@ func GetBodyForPR(prNumber string) (string, error) {
 
 func UpdateBodyForPR(prNumber string, body string) error {
 	_, err := cli.ExecuteCmd("gh", "pr", "edit", prNumber, "--body", body)
+	return err
+}
+
+func UpdatePRHead(parentHead, currentBranch string) error {
+	git.CheckoutBranch(currentBranch)
+	_, err := cli.ExecuteCmd("gh", "pr", "edit", "--base", parentHead)
 	return err
 }

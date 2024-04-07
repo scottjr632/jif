@@ -16,6 +16,13 @@ func ExecuteCmd(cmd string, args ...string) (result string, err error) {
 	return string(out), err
 }
 
+func ExecuteCmdWithEnviron(cmd string, env []string, args ...string) (string, error) {
+	execCmd := exec.Command(cmd, args...)
+	execCmd.Env = env
+	out, err := execCmd.CombinedOutput()
+	return string(out), err
+}
+
 func ExecuteCmdAsync(cmd string, args ...string) <-chan CmdResult {
 	result := make(chan CmdResult)
 	go func() {
