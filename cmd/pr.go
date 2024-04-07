@@ -147,6 +147,13 @@ func createPRForStack(currentStack *engine.Stack, additionalArgs ...string) erro
 	} else if exists {
 		color.Yellow("PR already exists for %s to %s, force pushing with lease", currentStack.Name, parentStack.Name)
 		return git.GitPushForce(currentStack.Name)
+	} else if !exists && currentStack.PRNumber != "" {
+		color.White("PR needs head updated")
+		if err = gh.UpdatePRHead(parentStack.Name, currentStack.Name); err != nil {
+			color.Red("Error updating PR head: %s", err)
+			return err
+		}
+		return git.GitPushForce(currentStack.Name)
 	}
 	color.Green("Creating PR for %s to %s", currentStack.Name, parentStack.Name)
 
@@ -181,6 +188,13 @@ func submitForParents(currentStack *engine.Stack, additionalArgs ...string) erro
 	} else if exists {
 		color.Yellow("PR already exists for %s to %s, force pushing with lease", currentStack.Name, parentStack.Name)
 		return git.GitPushForce(currentStack.Name)
+	} else if !exists && currentStack.PRNumber != "" {
+		color.White("PR needs head updated")
+		if err = gh.UpdatePRHead(parentStack.Name, currentStack.Name); err != nil {
+			color.Red("Error updating PR head: %s", err)
+			return err
+		}
+		return nil
 	}
 	color.Green("Creating PR for %s to %s", currentStack.Name, parentStack.Name)
 	return gh.CreatePR(parentStack.Name, currentStack.Name, additionalArgs...)
@@ -192,7 +206,6 @@ func submitForSelfAndChildrenIfPRExists(currentStack *engine.Stack) error {
 		return err
 	}
 
-	git.CheckoutBranch(currentStack.Name)
 	if err = git.PushCurrentBranchToRemoteIfNotExistsAndNeedsUpdate(); err != nil {
 		color.Red("Error pushing current branch to remote: %s", err)
 		return err
@@ -204,7 +217,17 @@ func submitForSelfAndChildrenIfPRExists(currentStack *engine.Stack) error {
 	} else if exists {
 		color.Yellow("PR already exists for %s to %s, force pushing", currentStack.Name, parentStack.Name)
 		return git.GitPushForce(currentStack.Name)
+	} else if !exists {
+		if currentStack.PRNumber != "" {
+			color.White("PR needs head updated")
+
+			if err = gh.UpdatePRHead(parentStack.Name, currentStack.Name); err != nil {
+				color.Red("Error updating PR head: %s", err)
+				return err
+			}
+		}
 	}
+
 	for _, childID := range currentStack.Children {
 		childStack, err := engine.GetStackByID(childID)
 		if err != nil {

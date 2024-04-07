@@ -154,3 +154,37 @@ func SyncGithubWithLocal(trunk *Stack) error {
 	}
 	return Save()
 }
+
+func (s *Stack) ensureUniqueChildren(with *Stack) error {
+	for _, child := range s.Children {
+		if child == with.ID {
+			return fmt.Errorf("duplicate child: %s", s.Name)
+		}
+	}
+	return nil
+}
+
+func (s *Stack) removeChildStack(with *Stack) {
+	for i, child := range s.Children {
+		if child == with.ID {
+			s.Children = append(s.Children[:i], s.Children[i+1:]...)
+			break
+		}
+	}
+}
+
+func (s *Stack) Rebase(onto *Stack) error {
+	if err := s.ensureUniqueChildren(onto); err != nil {
+		return err
+	}
+
+	parentStack, err := GetStackByID(s.Parent)
+	if err != nil {
+		return err
+	}
+
+	parentStack.removeChildStack(s)
+	onto.Children = append(onto.Children, s.ID)
+	s.Parent = onto.ID
+	return Save()
+}
