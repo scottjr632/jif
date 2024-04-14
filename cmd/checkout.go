@@ -88,7 +88,7 @@ var checkoutCmd = &cobra.Command{
 			if branch.PRname != "" {
 				items[i] = branch.PRname
 			} else {
-				if err != nil {
+				if branch.CommitMessage == "" {
 					items[i] = branch.Name
 				} else {
 					items[i] = branch.CommitMessage

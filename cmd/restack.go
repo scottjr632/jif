@@ -13,7 +13,7 @@ var restackCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return engine.RestackChildren(stack)
+		return engine.RestackOntoParent(stack)
 	},
 }
 
