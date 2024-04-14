@@ -16,6 +16,7 @@ var unamendCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+
 		rev := stack.PopRevision()
 		if rev == "" {
 			color.Yellow("no revisions to unamend")
@@ -25,7 +26,12 @@ var unamendCmd = &cobra.Command{
 		if err = cli.ExecuteCommandInTerminal("git", "reset", "--soft", rev); err != nil {
 			return err
 		}
+
 		if len(stack.Children) > 0 {
+			if _, err = git.StageAll(); err != nil {
+				return nil
+			}
+
 			if err = cli.ExecuteCommandInTerminal("git", "stash"); err != nil {
 				return err
 			}
@@ -34,7 +40,7 @@ var unamendCmd = &cobra.Command{
 				cli.ExecuteCommandInTerminal("git", "stash", "pop")
 			}(stack)
 		}
-		if err = engine.RestackChildren(stack); err != nil {
+		if err = engine.RestackOntoParent(stack); err != nil {
 			return err
 		}
 		return engine.Save()

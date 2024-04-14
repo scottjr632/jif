@@ -33,7 +33,6 @@ func init() {
 	RootCmd.AddCommand(nextCmd)
 	RootCmd.AddCommand(logCmd)
 	RootCmd.AddCommand(logShortCmd)
-	RootCmd.AddCommand(amendCmd)
 	RootCmd.AddCommand(baseSubmitCmd)
 	RootCmd.AddCommand(statusCmd)
 	RootCmd.AddCommand(prCommand)

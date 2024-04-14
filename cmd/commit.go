@@ -5,6 +5,7 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/scottjr632/sequoia/internal/engine"
+	"github.com/scottjr632/sequoia/internal/git"
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +18,18 @@ var commitCmd = &cobra.Command{
 		if err != nil {
 			log.Println(err)
 			return err
+		}
+
+		stageAll, err := cmd.Flags().GetBool("all")
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		if stageAll {
+			_, err = git.StageAll()
+			if err != nil {
+				return err
+			}
 		}
 
 		if msg == "" {
@@ -41,4 +54,5 @@ var commitCmd = &cobra.Command{
 
 func init() {
 	commitCmd.Flags().StringP("message", "m", "", "The message to use for the commit")
+	commitCmd.Flags().BoolP("all", "a", false, "Stage all files")
 }
