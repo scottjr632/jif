@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var untrackCmd = &cobra.Command{
-	Use:   "untrack",
+var hideCmd = &cobra.Command{
+	Use:   "hide",
 	Short: "Untrack a branch",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		branchName, err := git.GetCurrentBranchName()
@@ -19,7 +19,7 @@ var untrackCmd = &cobra.Command{
 			return err
 		}
 		prompt := promptui.Select{
-			Label: fmt.Sprintf("Are you sure you want to untrack this branch? %s", branchName),
+			Label: fmt.Sprintf("Are you sure you want to hide this branch? %s", branchName),
 			Items: []string{"Yes", "No"},
 		}
 		_, result, err := prompt.Run()
@@ -28,12 +28,12 @@ var untrackCmd = &cobra.Command{
 		}
 
 		if result == "No" {
-			color.Green("Untrack aborted")
+			color.Green("Hide aborted")
 			return nil
 		}
 
 		if result == "Yes" {
-			color.Green("Untracking branch")
+			color.Green("Hiding branch")
 			trunkBranch, err := engine.ReadTrunkName()
 			if err != nil {
 				return err
@@ -49,5 +49,5 @@ var untrackCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(untrackCmd)
+	RootCmd.AddCommand(hideCmd)
 }
