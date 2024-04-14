@@ -18,7 +18,7 @@ var prCommand = &cobra.Command{
 
 var submitCmd = &cobra.Command{
 	Use:     "submit",
-	Short:   "Submit a pull request",
+	Short:   "Submit a pull request to GitHub",
 	Aliases: []string{"s"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		currentBranchStack, err := engine.GetStackForCurrentBranch()
