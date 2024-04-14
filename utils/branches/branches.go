@@ -8,7 +8,7 @@ import (
 )
 
 func PromptForBranchesAndReturnSelection(includeTrunk bool) (string, error) {
-	branchesWithNames, err := engine.GetAllBranchNames()
+	branchesWithNames, err := engine.GetAllBranchesWithNames()
 	if err != nil {
 		return "", err
 	}

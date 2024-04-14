@@ -29,7 +29,12 @@ func createNameLong(stack *engine.Stack) string {
 	if stack.PRName != "" {
 		builder = stack.PRName
 	} else {
-		builder = stack.Name
+		commitMessage, err := git.GetLatestCommitMessage(stack.Name)
+		if err != nil {
+			builder = stack.Name
+		} else {
+			builder = commitMessage
+		}
 	}
 
 	if stack.PRStatus != engine.PRStatusNone {
@@ -38,9 +43,6 @@ func createNameLong(stack *engine.Stack) string {
 
 	if stack.PRNumber != "" {
 		builder = fmt.Sprintf("%s #%s", builder, stack.PRNumber)
-	}
-	if stack.PRLink != "" {
-		builder = fmt.Sprintf("%s\n  %s", builder, stack.PRLink)
 	}
 	return builder
 }

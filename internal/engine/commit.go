@@ -108,7 +108,7 @@ func CommitWithNewBranch(message string, options CommitOptions) error {
 		return err
 	}
 
-	newStack := NewStack(branchName, false, false, sha, stack.ID)
+	newStack := NewStack(branchName, false, false, sha, stack.ID, message)
 	stack.AddChild(newStack.ID)
 	err = Save()
 	if err != nil {

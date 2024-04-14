@@ -47,3 +47,11 @@ func EnsureStagedFiles() error {
 func AmendCommit() error {
 	return cli.ExecuteCommandInTerminal("git", "commit", "--amend", "--no-edit")
 }
+
+func GetLatestCommitMessage(branchName string) (string, error) {
+	name, err := runGit("log", "-1", "--pretty=%B", branchName)
+	if err != nil {
+		return "", err
+	}
+	return strings.ReplaceAll(strings.TrimSpace(name), "\n", ""), nil
+}
