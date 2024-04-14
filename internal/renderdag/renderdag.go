@@ -57,7 +57,7 @@ func addChild(parent treeprint.Tree, child *engine.Stack, currentBranchName stri
 	}
 
 	if child.NeedsRestack {
-		branchName = fmt.Sprintf("%s (needs restack)", branchName)
+		branchName = fmt.Sprintf("%s (out of date)", branchName)
 	}
 
 	branch := parent.AddBranch(branchName)
