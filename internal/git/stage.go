@@ -1,5 +1,5 @@
 package git
 
 func StageAll() (string, error) {
-	return runGit("add", ".")
+	return runGit("add", "-A")
 }

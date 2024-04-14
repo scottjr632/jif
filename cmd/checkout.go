@@ -124,4 +124,5 @@ var checkoutCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(checkoutCmd)
+
 }
