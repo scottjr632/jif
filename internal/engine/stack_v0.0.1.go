@@ -280,7 +280,41 @@ func SetAllChildrenNeedRestackForTrunk(stack *Stack) {
 	}
 }
 
+func RestackOntoParent(stack *Stack) error {
+	stack.NeedsRestack = true
+	SetAllChildrenNeedRestackForTrunk(stack)
+	parent := stack.GetParent()
+	if parent == nil {
+		return nil
+	}
+
+	_, err := git.RebaseBranchOnto(stack.Name, parent.Name, git.RebaseOptions{GoBackToPreviousBranch: true})
+	if err != nil {
+		return err
+	}
+
+	for _, childID := range stack.Children {
+		child, err := GetStackByID(childID)
+		child.NeedsRestack = true
+		if err != nil {
+			return err
+		}
+		if child == nil {
+			continue
+		}
+
+		if err = RestackOntoParent(child); err != nil {
+			return err
+		}
+		child.NeedsRestack = false
+	}
+
+	stack.NeedsRestack = false
+	return Save()
+}
+
 func RestackChildren(stack *Stack) error {
+	stack.NeedsRestack = true
 	SetAllChildrenNeedRestackForTrunk(stack)
 	for _, childID := range stack.Children {
 		child, err := GetStackByID(childID)
@@ -299,7 +333,8 @@ func RestackChildren(stack *Stack) error {
 		child.NeedsRestack = false
 		RestackChildren(child)
 	}
-	return nil
+	stack.NeedsRestack = false
+	return Save()
 }
 
 func removeStackID(stackID StackID) {
