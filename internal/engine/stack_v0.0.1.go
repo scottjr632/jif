@@ -37,19 +37,20 @@ const (
 var engineFullPath = enginePath + stackBinaryName + "_" + version
 
 type Stack struct {
-	ID           StackID
-	Name         string
-	IsDirty      bool
-	IsTrunk      bool
-	NeedsRestack bool
-	Sha          string
-	Parent       StackID
-	PRStatus     PRStatusType
-	PRNumber     string
-	PRLink       string
-	PRName       string
-	Children     []StackID
-	Revisions    []string
+	ID            StackID
+	Name          string
+	IsDirty       bool
+	IsTrunk       bool
+	NeedsRestack  bool
+	CommitMessage string
+	Sha           string
+	Parent        StackID
+	PRStatus      PRStatusType
+	PRNumber      string
+	PRLink        string
+	PRName        string
+	Children      []StackID
+	Revisions     []string
 }
 
 type Stacks = []*Stack
@@ -76,7 +77,7 @@ func getNextID() StackID {
 	return localStacks[len(localStacks)-1].ID + 1
 }
 
-func newStack(id StackID, name string, isDirty bool, isTrunk bool, sha string, parentID StackID) *Stack {
+func newStack(id StackID, name string, isDirty bool, isTrunk bool, sha string, parentID StackID, message string) *Stack {
 	newStack := &Stack{
 		ID:           id,
 		Name:         name,
@@ -93,14 +94,14 @@ func newStack(id StackID, name string, isDirty bool, isTrunk bool, sha string, p
 	return newStack
 }
 
-func NewStack(name string, isDirty bool, isTrunk bool, sha string, parentID StackID) *Stack {
+func NewStack(name string, isDirty bool, isTrunk bool, sha string, parentID StackID, commitMsg string) *Stack {
 	nextID := getNextID()
-	newStack := newStack(nextID, name, isDirty, isTrunk, sha, parentID)
+	newStack := newStack(nextID, name, isDirty, isTrunk, sha, parentID, commitMsg)
 	return newStack
 }
 
 func newTrunk(name string, sha string) *Stack {
-	trunk := newStack(1, name, false, true, sha, 0)
+	trunk := newStack(1, name, false, true, sha, 0, "")
 	return trunk
 }
 

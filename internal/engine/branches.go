@@ -1,13 +1,17 @@
 package engine
 
-import "github.com/scottjr632/sequoia/utils/stack"
+import (
+	"github.com/scottjr632/sequoia/internal/git"
+	"github.com/scottjr632/sequoia/utils/stack"
+)
 
 type BranchWithName struct {
-	Name   string
-	PRname string
+	Name          string
+	PRname        string
+	CommitMessage string
 }
 
-func GetAllBranchNames() ([]BranchWithName, error) {
+func GetAllBranchesWithNames() ([]BranchWithName, error) {
 	trunk, err := GetTrunk()
 	if err != nil {
 		return nil, err
@@ -25,9 +29,17 @@ func GetAllBranchNames() ([]BranchWithName, error) {
 			return nil, err
 		}
 
+		if child.CommitMessage == "" {
+			commitMessage, err := git.GetLatestCommitMessage(child.Name)
+			if err == nil {
+				child.CommitMessage = commitMessage
+			}
+		}
+
 		branches = append(branches, BranchWithName{
-			Name:   child.Name,
-			PRname: child.PRName,
+			Name:          child.Name,
+			PRname:        child.PRName,
+			CommitMessage: child.CommitMessage,
 		})
 
 		stack.PushMany(child.Children)

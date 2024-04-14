@@ -78,7 +78,7 @@ var checkoutCmd = &cobra.Command{
 	Aliases: []string{"co"},
 	Short:   "Checkout a branch",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		branchesWithNames, err := engine.GetAllBranchNames()
+		branchesWithNames, err := engine.GetAllBranchesWithNames()
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,11 @@ var checkoutCmd = &cobra.Command{
 			if branch.PRname != "" {
 				items[i] = branch.PRname
 			} else {
-				items[i] = branch.Name
+				if err != nil {
+					items[i] = branch.Name
+				} else {
+					items[i] = branch.CommitMessage
+				}
 			}
 		}
 
@@ -107,7 +111,7 @@ var checkoutCmd = &cobra.Command{
 
 		branchNameToCheckout := result
 		for _, branch := range branchesWithNames {
-			if branch.PRname == result {
+			if branch.PRname == result || branch.CommitMessage == result {
 				branchNameToCheckout = branch.Name
 				break
 			}
